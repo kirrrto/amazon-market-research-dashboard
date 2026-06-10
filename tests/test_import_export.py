@@ -1,6 +1,7 @@
 from io import BytesIO
 
 import pandas as pd
+from openpyxl import load_workbook
 
 from src.finance import ProfitAssumptions
 from src.importers.export import (
@@ -239,3 +240,40 @@ def test_workbook_products_sheet_contains_profit_columns():
         engine="openpyxl",
     )
     assert "estimated_monthly_net_profit" in products.columns
+
+
+
+def test_workbook_formats_currency_and_margin_columns():
+    result = validate_and_clean_import(
+        source_frame(),
+        source_file="research.xlsx",
+        worksheet="Amazon US",
+        mapping=MAPPING,
+    )
+    assumptions = ProfitAssumptions(
+        product_cost=40,
+        shipping_cost=12,
+        platform_fee_rate=0.15,
+        advertising_cost_rate=0.10,
+        return_rate=0.05,
+    )
+    workbook_bytes = build_normalized_workbook(
+        prepare_export_result(result, assumptions)
+    )
+    workbook = load_workbook(BytesIO(workbook_bytes))
+    worksheet = workbook["Products"]
+
+    headers = {
+        str(cell.value): cell.column
+        for cell in worksheet[1]
+        if cell.value is not None
+    }
+
+    assert worksheet.cell(
+        row=2,
+        column=headers["estimated_unit_net_profit"],
+    ).number_format == '$#,##0.00'
+    assert worksheet.cell(
+        row=2,
+        column=headers["estimated_net_margin"],
+    ).number_format == '0.00%'

@@ -114,16 +114,17 @@ def add_profit_estimates(
         .clip(lower=0)
     )
 
-    result["estimated_unit_gross_profit"] = (
-        prices - assumptions.fixed_cost_per_unit
-    ).round(2)
-    result["estimated_unit_net_profit"] = (
+    raw_gross_profit = prices - assumptions.fixed_cost_per_unit
+    raw_net_profit = (
         prices * assumptions.contribution_rate
         - assumptions.fixed_cost_per_unit
-    ).round(2)
+    )
+
+    result["estimated_unit_gross_profit"] = raw_gross_profit.round(2)
+    result["estimated_unit_net_profit"] = raw_net_profit.round(2)
     result["estimated_net_margin"] = np.where(
         prices > 0,
-        result["estimated_unit_net_profit"] / prices,
+        raw_net_profit / prices,
         0.0,
     ).round(4)
     result["break_even_price"] = round(
@@ -131,7 +132,7 @@ def add_profit_estimates(
         2,
     )
     result["estimated_monthly_net_profit"] = (
-        result["estimated_unit_net_profit"] * monthly_sales
+        raw_net_profit * monthly_sales
     ).round(2)
 
     return result

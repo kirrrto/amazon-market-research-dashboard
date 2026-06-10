@@ -28,6 +28,38 @@ def _style_sheet(worksheet, freeze_panes: str = "A2") -> None:
         worksheet.column_dimensions[letter].width = width
 
 
+def _format_products_sheet(worksheet) -> None:
+    headers = {
+        str(cell.value): cell.column
+        for cell in worksheet[1]
+        if cell.value is not None
+    }
+
+    currency_columns = {
+        "price",
+        "estimated_monthly_revenue",
+        "estimated_unit_gross_profit",
+        "estimated_unit_net_profit",
+        "break_even_price",
+        "estimated_monthly_net_profit",
+    }
+    percentage_columns = {"estimated_net_margin"}
+
+    for header in currency_columns:
+        column_index = headers.get(header)
+        if column_index is None:
+            continue
+        for row in range(2, worksheet.max_row + 1):
+            worksheet.cell(row=row, column=column_index).number_format = '$#,##0.00'
+
+    for header in percentage_columns:
+        column_index = headers.get(header)
+        if column_index is None:
+            continue
+        for row in range(2, worksheet.max_row + 1):
+            worksheet.cell(row=row, column=column_index).number_format = '0.00%'
+
+
 def prepare_export_result(
     result: ImportResult,
     assumptions: ProfitAssumptions,
@@ -70,7 +102,9 @@ def build_normalized_workbook(result: ImportResult) -> bytes:
             startrow=len(summary) + 3,
         )
 
-        _style_sheet(writer.book["Products"])
+        products_sheet = writer.book["Products"]
+        _style_sheet(products_sheet)
+        _format_products_sheet(products_sheet)
         _style_sheet(writer.book["Issues"])
         report_sheet = writer.book["Import Report"]
         _style_sheet(report_sheet)

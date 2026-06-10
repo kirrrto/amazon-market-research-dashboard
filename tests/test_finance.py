@@ -69,3 +69,22 @@ def test_unsustainable_variable_rates_are_rejected():
 
     with pytest.raises(ValueError, match="must be lower than 100%"):
         assumptions.validate()
+
+
+
+def test_monthly_profit_uses_unrounded_unit_precision():
+    assumptions = ProfitAssumptions(
+        product_cost=40,
+        shipping_cost=12,
+        platform_fee_rate=0.15,
+        advertising_cost_rate=0.10,
+        return_rate=0.05,
+    )
+    data = pd.DataFrame(
+        [{"price": 79.99, "monthly_sales": 420, "asin": "B0TEST001"}]
+    )
+
+    result = add_profit_estimates(data, assumptions)
+
+    assert result.loc[0, "estimated_unit_net_profit"] == 3.99
+    assert result.loc[0, "estimated_monthly_net_profit"] == 1677.06
