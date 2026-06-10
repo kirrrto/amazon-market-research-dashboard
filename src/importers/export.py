@@ -6,6 +6,8 @@ from typing import Iterable
 import pandas as pd
 from openpyxl.styles import Font, PatternFill
 
+from src.finance import ProfitAssumptions, add_profit_estimates
+
 from .models import ImportResult
 
 
@@ -24,6 +26,19 @@ def _style_sheet(worksheet, freeze_panes: str = "A2") -> None:
         values = [str(cell.value or "") for cell in column_cells[:100]]
         width = min(max(max(map(len, values), default=8) + 2, 10), 40)
         worksheet.column_dimensions[letter].width = width
+
+
+def prepare_export_result(
+    result: ImportResult,
+    assumptions: ProfitAssumptions,
+) -> ImportResult:
+    """Return an export-ready result using the current profit assumptions."""
+
+    return ImportResult(
+        products=add_profit_estimates(result.products, assumptions),
+        issues=result.issues,
+        report=result.report,
+    )
 
 
 def build_normalized_workbook(result: ImportResult) -> bytes:
