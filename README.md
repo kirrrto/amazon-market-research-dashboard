@@ -14,6 +14,8 @@
 ## 功能
 
 - 自动校验 CSV 必需字段
+- 解析 `$79.99`、`1,234`、`4.5 out of 5` 等常见导出格式
+- 汇报无效行、重复 ASIN、空品牌和异常数值的清洗结果
 - 兼容缺失值和异常数值
 - 计算品牌销售额份额
 - 生成 0–100 的机会分数
@@ -78,6 +80,78 @@ pytest
 - 价格可操作空间
 
 该分数用于初筛，不应替代完整的供应链、合规、专利、广告成本和利润分析。
+
+
+## 数据清洗规则
+
+导入 CSV 时，系统会执行以下处理：
+
+- 字段名称会去除首尾空格并转换为小写
+- ASIN 会转换为大写，并按 ASIN 去重
+- `$`、千分位逗号和文本评分会转换为数值
+- 缺少 ASIN 或关键数值无效的行会被移除
+- 负价格、负评论数和负月销量会归零
+- 评分会限制在 `0–5` 范围内
+- 空品牌会标记为 `Unknown`
+- 空类目会标记为 `Uncategorized`
+
+页面会显示本次导入中被移除或自动修正的数据数量，便于检查原始调研表质量。
+
+## 利润模型
+
+利润估算使用以下输入：
+
+- Product cost：单位产品成本
+- Shipping cost：单位物流成本
+- Platform fee rate：平台费用占售价的比例
+- Advertising cost rate：广告费用占售价的比例
+- Return rate：退货损失占售价的比例
+
+计算公式：
+
+```text
+Contribution rate
+= 1 - platform fee rate - advertising cost rate - return rate
+
+Estimated unit net profit
+= price × contribution rate - product cost - shipping cost
+
+Estimated net margin
+= estimated unit net profit ÷ price
+
+Break-even price
+= (product cost + shipping cost) ÷ contribution rate
+
+Estimated monthly net profit
+= estimated unit net profit × monthly sales
+```
+
+当前版本对全部产品使用同一组成本假设，因此适合市场机会初筛，不替代正式财务核算。
+
+## Troubleshooting
+
+### Missing required columns
+
+检查 CSV 是否包含 README 中列出的全部必需字段。字段大小写和首尾空格可以自动处理，但字段名称本身必须一致。
+
+### No valid product rows remain after cleaning
+
+说明所有行都缺少 ASIN，或 `price`、`rating`、`reviews`、`monthly_sales` 中存在无法识别的数据。请检查原始导出表。
+
+### Invalid profit assumptions
+
+平台费率、广告费率和退货率之和必须低于 100%，产品成本和物流成本不能为负数。
+
+### ModuleNotFoundError
+
+请在项目根目录运行：
+
+```bash
+streamlit run app.py
+```
+
+不要直接进入 `src` 目录启动程序。
+
 
 ## 路线图
 
