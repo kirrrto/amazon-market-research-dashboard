@@ -17,12 +17,26 @@ class ImportIssue:
     message: str
 
     def as_dict(self) -> dict[str, Any]:
+        raw_value = self.raw_value
+        is_blank = raw_value is None
+        if not is_blank:
+            try:
+                is_blank = bool(pd.isna(raw_value))
+            except (TypeError, ValueError):
+                is_blank = False
+
+        display_value = (
+            "(blank)"
+            if is_blank or str(raw_value).strip() == ""
+            else str(raw_value)
+        )
+
         return {
             "row_number": self.row_number,
             "severity": self.severity,
             "field": self.field,
             "error_code": self.error_code,
-            "raw_value": "" if self.raw_value is None else str(self.raw_value),
+            "raw_value": display_value,
             "message": self.message,
         }
 

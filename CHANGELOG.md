@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Preserved full precision when calculating monthly net profit
+- Added currency and percentage formats to exported profit columns
+- Fixed normalized exports to include current profit assumptions
+- Fixed missing issue values to display as `(blank)`
+- Aligned the visible upload limit with the 20 MB project limit
+- Made CSV and Excel workflow numbering consistent
 - Added CSV, XLSX and XLS spreadsheet import
 - Added worksheet selection and field mapping
 - Added row-level validation reporting

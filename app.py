@@ -8,7 +8,10 @@ import streamlit as st
 
 from src.analysis import brand_summary, price_band_summary, summarize_market
 from src.finance import ProfitAssumptions, add_profit_estimates
-from src.importers.export import build_normalized_workbook
+from src.importers.export import (
+    build_normalized_workbook,
+    prepare_export_result,
+)
 from src.importers.mapping import (
     FIELD_LABELS,
     STANDARD_FIELDS,
@@ -96,10 +99,13 @@ else:
     st.stop()
 
 worksheet: str | None = None
+st.subheader("Step 1 — Select source data")
 try:
     sheets = list_worksheets(file_name, file_content)
     if sheets:
-        worksheet = st.selectbox("Step 1 — Select worksheet", sheets)
+        worksheet = st.selectbox("Worksheet", sheets)
+    else:
+        st.caption("CSV and sample files do not require worksheet selection.")
     raw_data = read_tabular_file(file_name, file_content, worksheet)
 except TabularImportError as exc:
     st.error(f"Unable to import file: {exc}")
@@ -192,7 +198,21 @@ if result.products.empty:
     st.error("No valid product rows remain. Correct the source file and retry.")
     st.stop()
 
-workbook_bytes = build_normalized_workbook(result)
+assumptions = ProfitAssumptions(
+    product_cost=product_cost,
+    shipping_cost=shipping_cost,
+    platform_fee_rate=platform_fee_rate / 100,
+    advertising_cost_rate=advertising_cost_rate / 100,
+    return_rate=return_rate / 100,
+)
+
+try:
+    export_result = prepare_export_result(result, assumptions)
+except ValueError as exc:
+    st.error(f"Invalid profit assumptions: {exc}")
+    st.stop()
+
+workbook_bytes = build_normalized_workbook(export_result)
 st.download_button(
     "Download normalized workbook",
     data=workbook_bytes,
@@ -203,7 +223,7 @@ st.download_button(
     ),
 )
 
-data = result.products.copy()
+data = export_result.products.copy()
 categories = sorted(data["category"].dropna().unique().tolist())
 brands = sorted(data["brand"].dropna().unique().tolist())
 
@@ -223,20 +243,6 @@ filtered = data[
     data["category"].isin(selected_categories)
     & data["brand"].isin(selected_brands)
 ].copy()
-
-assumptions = ProfitAssumptions(
-    product_cost=product_cost,
-    shipping_cost=shipping_cost,
-    platform_fee_rate=platform_fee_rate / 100,
-    advertising_cost_rate=advertising_cost_rate / 100,
-    return_rate=return_rate / 100,
-)
-
-try:
-    filtered = add_profit_estimates(filtered, assumptions)
-except ValueError as exc:
-    st.error(f"Invalid profit assumptions: {exc}")
-    st.stop()
 
 st.subheader("Step 5 — Market and profit analysis")
 summary = summarize_market(filtered)
