@@ -7,7 +7,7 @@ import streamlit as st
 
 from src.analysis import (
     brand_summary,
-    clean_market_data,
+    clean_market_data_with_report,
     price_band_summary,
     summarize_market,
 )
@@ -51,11 +51,18 @@ try:
         st.info("Upload a CSV or enable sample data.")
         st.stop()
 
-    data = clean_market_data(raw_data)
+    data, cleaning_report = clean_market_data_with_report(raw_data)
 
 except (ValueError, pd.errors.ParserError, UnicodeDecodeError) as exc:
     st.error(f"Unable to process file: {exc}")
     st.stop()
+
+if cleaning_report.changed_rows_or_values:
+    details = "; ".join(cleaning_report.messages())
+    st.warning(
+        f"Imported {cleaning_report.output_rows} of {cleaning_report.input_rows} rows. "
+        f"Automatic cleaning applied: {details}."
+    )
 
 categories = sorted(data["category"].dropna().unique().tolist())
 brands = sorted(data["brand"].dropna().unique().tolist())
