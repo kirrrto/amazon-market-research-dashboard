@@ -1,9 +1,13 @@
 # Amazon Market Research Dashboard
+
 ## Live Demo
 
 Try the dashboard online:
 
 [Open Amazon Market Research Dashboard](https://kirrrto-amazon-market-research.streamlit.app)
+
+## Overview
+
 一个面向亚马逊产品开发和市场调研工作的轻量级分析工具。用户上传 CSV、XLSX 或 XLS 产品调研表后，可通过字段映射完成标准化，并快速得到：
 
 - 预估月销售额
