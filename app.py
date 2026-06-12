@@ -7,6 +7,8 @@ import pandas as pd
 import streamlit as st
 
 from src.analysis import brand_summary, price_band_summary, summarize_market
+from src.connectors.export import build_product_page_workbook
+from src.connectors.product_page import collect_product_pages
 from src.finance import ProfitAssumptions, add_profit_estimates
 from src.importers.export import (
     build_normalized_workbook,
@@ -34,8 +36,8 @@ st.set_page_config(
 )
 st.title("Amazon Market Research Dashboard")
 st.caption(
-    "Import product research spreadsheets, standardize fields, validate data "
-    "and evaluate market and profit opportunities."
+    "Import product research spreadsheets or public product pages, standardize fields, "
+    "validate data and evaluate market and profit opportunities."
 )
 
 sample_path = Path(__file__).parent / "data" / "sample_products.csv"
@@ -43,15 +45,28 @@ NOT_MAPPED = "— Not mapped —"
 
 with st.sidebar:
     st.header("Data source")
-    uploaded_file = st.file_uploader(
-        "Upload CSV or Excel",
-        type=["csv", "xlsx", "xls"],
-        help="Supported formats: CSV, XLSX and XLS. Project limit: 20 MB.",
+    data_source_mode = st.radio(
+        "Input mode",
+        [
+            "Use included sample data",
+            "Upload CSV or Excel",
+            "Import from product URLs",
+        ],
+        index=0,
     )
-    use_sample = st.checkbox(
-        "Use included sample data",
-        value=uploaded_file is None,
-    )
+
+    uploaded_file = None
+    if data_source_mode == "Upload CSV or Excel":
+        uploaded_file = st.file_uploader(
+            "Upload CSV or Excel",
+            type=["csv", "xlsx", "xls"],
+            help="Supported formats: CSV, XLSX and XLS. Project limit: 20 MB.",
+        )
+    elif data_source_mode == "Import from product URLs":
+        st.caption(
+            "Use public supplier or brand product pages. Do not use login-only, "
+            "CAPTCHA-protected or restricted pages."
+        )
 
     st.header("Profit assumptions")
     product_cost = st.number_input(
@@ -88,15 +103,96 @@ with st.sidebar:
         step=0.5,
     )
 
-if uploaded_file is not None:
+
+def _parse_url_lines(value: str) -> list[str]:
+    return [line.strip() for line in value.splitlines() if line.strip()]
+
+
+if data_source_mode == "Import from product URLs":
+    st.subheader("Public product page connector")
+    st.caption(
+        "Paste public supplier or brand product page URLs. The connector extracts "
+        "JSON-LD Product data, HTML specification tables, document links and fetch logs."
+    )
+    st.warning(
+        "Scope: public static product pages only. This connector does not bypass "
+        "logins, CAPTCHA, paywalls or site access restrictions. Amazon page scraping is out of scope.",
+        icon="⚠️",
+    )
+
+    url_text = st.text_area(
+        "Product page URLs, one per line",
+        height=180,
+        placeholder=(
+            "https://supplier.example.com/product/wireless-backup-camera\n"
+            "https://brand.example.com/products/4g-solar-camera"
+        ),
+    )
+    urls = _parse_url_lines(url_text)
+
+    if st.button("Fetch product pages", type="primary"):
+        if not urls:
+            st.error("Paste at least one product page URL.")
+        else:
+            with st.spinner(f"Fetching {len(urls)} URL(s)..."):
+                st.session_state["product_page_connector_result"] = collect_product_pages(urls)
+
+    connector_result = st.session_state.get("product_page_connector_result")
+    if connector_result is None:
+        st.info("Paste URLs and select “Fetch product pages” to start collection.")
+        st.stop()
+
+    products_frame = connector_result.products_frame
+    specs_frame = connector_result.raw_specs_frame
+    logs_frame = connector_result.fetch_logs_frame
+    issues_frame = connector_result.issues_frame
+
+    st.subheader("Connector results")
+    metric_1, metric_2, metric_3, metric_4 = st.columns(4)
+    metric_1.metric("Products", f"{len(products_frame):,}")
+    metric_2.metric(
+        "Successful fetches",
+        f"{int(logs_frame['success'].sum()) if not logs_frame.empty else 0:,}",
+    )
+    metric_3.metric("Raw specs", f"{len(specs_frame):,}")
+    metric_4.metric("Issues", f"{len(issues_frame):,}")
+
+    tab_products, tab_specs, tab_logs, tab_issues = st.tabs(
+        ["Products", "Raw Specifications", "Fetch Logs", "Issues"]
+    )
+    with tab_products:
+        st.dataframe(products_frame, use_container_width=True, hide_index=True)
+    with tab_specs:
+        st.dataframe(specs_frame, use_container_width=True, hide_index=True)
+    with tab_logs:
+        st.dataframe(logs_frame, use_container_width=True, hide_index=True)
+    with tab_issues:
+        if issues_frame.empty:
+            st.success("No connector issues were recorded.")
+        else:
+            st.dataframe(issues_frame, use_container_width=True, hide_index=True)
+
+    st.download_button(
+        "Download product page import workbook",
+        data=build_product_page_workbook(connector_result),
+        file_name="product_page_import.xlsx",
+        mime=(
+            "application/vnd.openxmlformats-officedocument."
+            "spreadsheetml.sheet"
+        ),
+    )
+    st.stop()
+
+
+if data_source_mode == "Upload CSV or Excel":
+    if uploaded_file is None:
+        st.info("Upload a spreadsheet to continue.")
+        st.stop()
     file_name = uploaded_file.name
     file_content = uploaded_file.getvalue()
-elif use_sample:
+else:
     file_name = sample_path.name
     file_content = sample_path.read_bytes()
-else:
-    st.info("Upload a spreadsheet or enable the included sample data.")
-    st.stop()
 
 worksheet: str | None = None
 st.subheader("Step 1 — Select source data")
