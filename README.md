@@ -8,33 +8,64 @@ Try the dashboard online:
 
 ## Overview
 
-一个面向亚马逊产品开发和市场调研工作的轻量级分析工具。用户上传 CSV、XLSX 或 XLS 产品调研表后，可通过字段映射完成标准化，并快速得到：
+一个面向亚马逊产品开发、跨境硬件产品调研和市场机会评估的轻量级数据工作台。
+
+用户可以通过 CSV、XLSX、XLS 或公开产品页面 URL 导入数据，完成字段映射、数据清洗、市场分析、利润测算和标准化 Excel 导出。
+
+该项目的目标不是替代 Helium 10、Jungle Scout、Keepa 等专业数据源，而是把不同来源的数据统一到一个可审计、可复用、适合硬件产品开发的分析流程中。
+
+## Current Capabilities
+
+### Spreadsheet Import
+
+- 支持 CSV、XLSX 和 XLS 文件
+- 支持 Excel 多工作表选择
+- 自动推荐中英文字段映射
+- 支持人工修正字段映射
+- 拦截重复源字段映射
+- 输出行级错误和警告
+- 导出标准化 Excel 工作簿
+
+### Public Product Page Connector
+
+- 支持批量粘贴公开产品页面 URL
+- 顺序抓取公开 HTML 页面
+- 记录来源 URL、域名、状态码和采集时间
+- 提取 JSON-LD Product 数据
+- 提取 HTML 规格表和 `<dl><dt><dd>` 结构
+- 提取页面标题、图片链接和文档链接
+- 输出 Products、Raw Specifications、Fetch Logs 和 Issues 工作表
+
+详细说明见 [`docs/product-page-connector.md`](docs/product-page-connector.md)。
+
+### Market and Profit Analysis
 
 - 预估月销售额
 - 价格带分布
 - 品牌集中度
 - 评论门槛与评分差距
 - 产品机会分数
-- 可下载的分析结果
+- 单位毛利润和净利润
+- 净利率
+- 盈亏平衡售价
+- 预估月净利润
+- 可下载分析结果
 
-该项目不抓取亚马逊页面，也不绕过平台限制。数据应来自用户合法获取的公开数据、第三方工具导出或内部调研表格。
+## Data Source Policy
 
-## 功能
+该项目不绕过登录、验证码、付费墙或访问限制。
 
-- 支持 CSV、XLSX、XLS 和多工作表选择
-- 自动推荐中英文字段映射，并允许人工修正
-- 输出行级错误、警告及标准化 Excel 工作簿
-- 自动校验必需字段
-- 解析 `$79.99`、`1,234`、`4.5 out of 5` 等常见导出格式
-- 汇报无效行、重复 ASIN、空品牌和异常数值的清洗结果
-- 兼容缺失值和异常数值
-- 计算品牌销售额份额
-- 生成 0–100 的机会分数
-- 支持按类目和品牌筛选
-- 导出处理后的 CSV
-- 提供单元测试和 GitHub Actions
+市场数据和网页数据应来自：
 
-## 表格导入流程
+- 用户合法获取的公开数据
+- 第三方工具导出的 CSV / Excel
+- 内部调研表格
+- 用户明确提供的公开供应商或品牌产品页面 URL
+- 后续获得授权的官方 API 或第三方 API
+
+当前版本**不以 Amazon 商品页面 HTML 抓取为核心功能**。Amazon 相关数据建议优先通过合法导出文件、授权 API 或第三方数据工具导入。
+
+## Spreadsheet Import Workflow
 
 ```text
 上传文件 → 选择工作表 → 预览 → 字段映射 → 数据校验 → 分析与导出
@@ -42,9 +73,18 @@ Try the dashboard online:
 
 详细说明见 [`docs/import-workflow.md`](docs/import-workflow.md)。
 
-## 输入字段
+## Product Page Connector Workflow
 
-CSV 至少应包含：
+```text
+粘贴产品页面 URL → 抓取公开 HTML → 解析 JSON-LD 与规格表
+→ 查看抓取日志和问题 → 下载 Excel → 后续进入规格分析
+```
+
+当前连接器适合结构清晰的供应商官网、品牌官网和普通公开产品页。对于 JavaScript 渲染页面、登录页面、验证码页面、Amazon 商品页和 PDF 内容解析，后续会通过独立模块处理。
+
+## Required Spreadsheet Fields
+
+市场分析至少需要以下标准字段：
 
 | 字段 | 说明 |
 |---|---|
@@ -57,7 +97,9 @@ CSV 至少应包含：
 | monthly_sales | 预估月销量 |
 | category | 类目 |
 
-## 本地运行
+## Local Setup
+
+Create a virtual environment:
 
 ```bash
 python -m venv .venv
@@ -65,7 +107,7 @@ python -m venv .venv
 
 Windows:
 
-```bash
+```bat
 .venv\Scripts\activate
 ```
 
@@ -75,20 +117,20 @@ macOS / Linux:
 source .venv/bin/activate
 ```
 
-安装依赖并运行：
+Install dependencies and start the app:
 
 ```bash
-pip install -r requirements.txt
-streamlit run app.py
+python -m pip install -r requirements.txt
+python -m streamlit run app.py
 ```
 
-## 运行测试
+## Run Tests
 
 ```bash
-pytest
+python -m pytest -q
 ```
 
-## 机会分数说明
+## Opportunity Score
 
 机会分数综合考虑：
 
@@ -100,13 +142,12 @@ pytest
 
 该分数用于初筛，不应替代完整的供应链、合规、专利、广告成本和利润分析。
 
+## Data Cleaning Rules
 
-## 数据清洗规则
+导入表格数据时，系统会执行以下处理：
 
-导入 CSV 时，系统会执行以下处理：
-
-- 字段名称会去除首尾空格并转换为小写
-- ASIN 会转换为大写，并按 ASIN 去重
+- 字段名称去除首尾空格并转换为标准字段
+- ASIN 转换为大写并按 ASIN 去重
 - `$`、千分位逗号和文本评分会转换为数值
 - 缺少 ASIN 或关键数值无效的行会被移除
 - 负价格、负评论数和负月销量会归零
@@ -116,7 +157,7 @@ pytest
 
 页面会显示本次导入中被移除或自动修正的数据数量，便于检查原始调研表质量。
 
-## 利润模型
+## Profit Model
 
 利润估算使用以下输入：
 
@@ -142,7 +183,7 @@ Break-even price
 = (product cost + shipping cost) ÷ contribution rate
 
 Estimated monthly net profit
-= estimated unit net profit × monthly sales
+= unrounded estimated unit net profit × monthly sales
 ```
 
 当前版本对全部产品使用同一组成本假设，因此适合市场机会初筛，不替代正式财务核算。
@@ -151,11 +192,15 @@ Estimated monthly net profit
 
 ### Missing required columns
 
-检查 CSV 是否包含 README 中列出的全部必需字段。字段大小写和首尾空格可以自动处理，但字段名称本身必须一致。
+检查 CSV 或 Excel 是否包含全部必需字段。字段大小写、首尾空格和常见中英文字段别名可以自动处理，但字段语义必须明确。
 
 ### No valid product rows remain after cleaning
 
 说明所有行都缺少 ASIN，或 `price`、`rating`、`reviews`、`monthly_sales` 中存在无法识别的数据。请检查原始导出表。
+
+### Product URL fetch failed
+
+检查页面是否为公开 HTML 页面。当前连接器不支持登录页面、验证码页面、PDF 内容解析或 JavaScript 完全渲染页面。
 
 ### Invalid profit assumptions
 
@@ -163,22 +208,24 @@ Estimated monthly net profit
 
 ### ModuleNotFoundError
 
-请在项目根目录运行：
+请在项目根目录安装依赖并运行：
 
 ```bash
-streamlit run app.py
+python -m pip install -r requirements.txt
+python -m streamlit run app.py
 ```
 
-不要直接进入 `src` 目录启动程序。
+## Roadmap
 
-
-## 路线图
-
-- [ ] 增加毛利率和广告成本模型
-- [ ] 增加关键词覆盖分析
-- [ ] 增加产品规格对比
-- [ ] 支持 Excel 文件
-- [ ] 生成可打印市场调研报告
+- [ ] 安防摄像头规格模板
+- [ ] 车载影像规格模板
+- [ ] 规格字段别名和单位标准化
+- [ ] 竞品规格矩阵
+- [ ] 参数缺失和冲突检测
+- [ ] 供应商评分模型
+- [ ] 合规矩阵
+- [ ] PDF 规格书解析
+- [ ] Word / PDF 调研报告导出
 
 ## License
 

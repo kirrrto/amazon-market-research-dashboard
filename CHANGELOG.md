@@ -2,22 +2,21 @@
 
 ## Unreleased
 
-- Preserved full precision when calculating monthly net profit
-- Added currency and percentage formats to exported profit columns
-- Fixed normalized exports to include current profit assumptions
-- Fixed missing issue values to display as `(blank)`
-- Aligned the visible upload limit with the 20 MB project limit
-- Made CSV and Excel workflow numbering consistent
+- Added public product page connector foundation
+- Added public URL validation and sequential fetching
+- Added JSON-LD Product extraction
+- Added HTML specification table and definition-list extraction
+- Added source URL, fetch logs, parsing issues and collection timestamps
+- Added product page connector Excel export
+- Added local HTML fixture tests for connector parsing and export
+
+## 0.1.0
+
 - Added CSV, XLSX and XLS spreadsheet import
 - Added worksheet selection and field mapping
 - Added row-level validation reporting
 - Added normalized Excel workbook export
-
-
-## 0.1.0
-
-- Added CSV upload and validation
-- Added opportunity score
-- Added brand and price band analysis
-- Added CSV export
-- Added automated tests
+- Added gross margin and net profit estimation
+- Preserved full precision when calculating monthly net profit
+- Added currency and percentage formats to exported profit columns
+- Added automated tests and GitHub Actions
