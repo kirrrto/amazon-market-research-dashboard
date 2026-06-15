@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- Added bilingual translation helpers for English and Simplified Chinese
+- Added Template Center workbook generator
+- Added downloadable market research, supplier quote, product URL, security camera and vehicle camera templates
+- Added hardware specification dictionary and alias-based normalization
+- Added Normalized Specifications export for product page connector results
+- Added bilingual Streamlit interface basics
+- Added localized workbook sheet and column labels
+- Added English and Chinese user documentation
+
+## 0.2.0
+
 - Added public product page connector foundation
 - Added public URL validation and sequential fetching
 - Added JSON-LD Product extraction
