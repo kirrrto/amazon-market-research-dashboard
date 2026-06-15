@@ -7,6 +7,7 @@ import pandas as pd
 from openpyxl.styles import Font, PatternFill
 
 from src.finance import ProfitAssumptions, add_profit_estimates
+from src.i18n import column_label, normalize_language, sheet_label
 
 from .models import ImportResult
 
@@ -28,7 +29,7 @@ def _style_sheet(worksheet, freeze_panes: str = "A2") -> None:
         worksheet.column_dimensions[letter].width = width
 
 
-def _format_products_sheet(worksheet) -> None:
+def _format_products_sheet(worksheet, language: str = "en") -> None:
     headers = {
         str(cell.value): cell.column
         for cell in worksheet[1]
@@ -46,18 +47,24 @@ def _format_products_sheet(worksheet) -> None:
     percentage_columns = {"estimated_net_margin"}
 
     for header in currency_columns:
-        column_index = headers.get(header)
+        localized_header = column_label(header, language)
+        column_index = headers.get(localized_header) or headers.get(header)
         if column_index is None:
             continue
         for row in range(2, worksheet.max_row + 1):
             worksheet.cell(row=row, column=column_index).number_format = '$#,##0.00'
 
     for header in percentage_columns:
-        column_index = headers.get(header)
+        localized_header = column_label(header, language)
+        column_index = headers.get(localized_header) or headers.get(header)
         if column_index is None:
             continue
         for row in range(2, worksheet.max_row + 1):
             worksheet.cell(row=row, column=column_index).number_format = '0.00%'
+
+
+def _localized_frame(frame: pd.DataFrame, language: str) -> pd.DataFrame:
+    return frame.rename(columns={column: column_label(str(column), language) for column in frame.columns})
 
 
 def prepare_export_result(
@@ -73,40 +80,57 @@ def prepare_export_result(
     )
 
 
-def build_normalized_workbook(result: ImportResult) -> bytes:
+def build_normalized_workbook(result: ImportResult, language: str = "en") -> bytes:
+    code = normalize_language(language)
     buffer = BytesIO()
-    issues = result.issues_frame
+    issues = _localized_frame(result.issues_frame, code)
+    products = _localized_frame(result.products, code)
+
+    summary_headers = (
+        ["Item", "Value"]
+        if code == "en"
+        else ["项目", "值"]
+    )
+    mapping_headers = (
+        ["Standard field", "Source column"]
+        if code == "en"
+        else ["标准字段", "源字段"]
+    )
 
     summary = pd.DataFrame(
         result.report.summary_rows(),
-        columns=["Item", "Value"],
+        columns=summary_headers,
     )
     mapping = pd.DataFrame(
         sorted(result.report.mapping.items()),
-        columns=["Standard field", "Source column"],
+        columns=mapping_headers,
     )
 
+    products_sheet_name = sheet_label("products", code)
+    issues_sheet_name = sheet_label("issues", code)
+    report_sheet_name = sheet_label("import_report", code)
+
     with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
-        result.products.to_excel(writer, sheet_name="Products", index=False)
-        issues.to_excel(writer, sheet_name="Issues", index=False)
+        products.to_excel(writer, sheet_name=products_sheet_name, index=False)
+        issues.to_excel(writer, sheet_name=issues_sheet_name, index=False)
         summary.to_excel(
             writer,
-            sheet_name="Import Report",
+            sheet_name=report_sheet_name,
             index=False,
             startrow=0,
         )
         mapping.to_excel(
             writer,
-            sheet_name="Import Report",
+            sheet_name=report_sheet_name,
             index=False,
             startrow=len(summary) + 3,
         )
 
-        products_sheet = writer.book["Products"]
+        products_sheet = writer.book[products_sheet_name]
         _style_sheet(products_sheet)
-        _format_products_sheet(products_sheet)
-        _style_sheet(writer.book["Issues"])
-        report_sheet = writer.book["Import Report"]
+        _format_products_sheet(products_sheet, code)
+        _style_sheet(writer.book[issues_sheet_name])
+        report_sheet = writer.book[report_sheet_name]
         _style_sheet(report_sheet)
         mapping_header_row = len(summary) + 4
         for cell in report_sheet[mapping_header_row]:

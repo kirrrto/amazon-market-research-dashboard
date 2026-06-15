@@ -61,7 +61,7 @@ The connector attempts to extract:
 
 ## Output Workbook
 
-The exported workbook contains four sheets.
+The exported workbook contains five sheets.
 
 ### Products
 
@@ -69,33 +69,23 @@ One row per URL, including title, brand, model, price, image URL, document links
 
 ### Raw Specifications
 
-One row per extracted specification.
+One row per extracted raw specification.
 
-Columns:
+### Normalized Specifications
+
+One row per recognized specification field, preserving the raw evidence and adding:
 
 ```text
-source_url
-spec_name
-spec_value
-parser
-fetched_at
+standard_field
+standard_label
+normalized_value
+confidence
+category
 ```
 
 ### Fetch Logs
 
 One row per fetch attempt.
-
-Columns:
-
-```text
-source_url
-domain
-success
-status_code
-elapsed_ms
-fetched_at
-error_message
-```
 
 ### Issues
 
@@ -124,19 +114,7 @@ The connector follows these principles:
 ```text
 Paste supplier or brand product URLs
 → Fetch product pages
-→ Review Products, Raw Specifications, Fetch Logs and Issues
+→ Review Products, Raw Specifications, Normalized Specifications, Fetch Logs and Issues
 → Download Excel
 → Use extracted data as input for specification templates and market analysis
 ```
-
-## Future Improvements
-
-Planned improvements include:
-
-- Domain-level rate limiting
-- `robots.txt` policy checks
-- JavaScript-rendered page support through a controlled browser engine
-- PDF datasheet parsing
-- Specification alias normalization
-- Security camera and vehicle camera field templates
-- Supplier website monitoring
