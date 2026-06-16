@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- Added specification matrix builder
+- Added specification coverage summary
+- Added required specification profiles for generic hardware, security cameras and vehicle imaging products
+- Added missing-field gap analysis with low / medium / high risk levels
+- Added Specification Matrix, Coverage Summary and Gap Analysis sheets to product page connector exports
+- Added bilingual labels for matrix, coverage and gap analysis exports
+- Added Streamlit UI tabs for matrix, coverage and gap analysis
+- Added documentation for specification matrix interpretation
+
+## 0.3.0
+
 - Added bilingual translation helpers for English and Simplified Chinese
 - Added Template Center workbook generator
 - Added downloadable market research, supplier quote, product URL, security camera and vehicle camera templates

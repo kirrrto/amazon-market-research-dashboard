@@ -15,7 +15,7 @@ Try the dashboard online:
 
 A lightweight product research and market analysis dashboard for Amazon product developers, cross-border ecommerce teams, sourcing teams and hardware product managers.
 
-The project helps users import spreadsheet research data, collect public supplier product page information, validate data quality, estimate profit and gradually normalize hardware specifications for security cameras and vehicle imaging products.
+The project helps users import spreadsheet research data, collect public supplier product page information, validate data quality, estimate profit, normalize hardware specifications and compare specification gaps for security cameras and vehicle imaging products.
 
 This project does not replace Helium 10, Jungle Scout, Keepa or other specialized data platforms. Instead, it provides a practical workflow layer for turning mixed research data, supplier pages and internal spreadsheets into auditable product development inputs.
 
@@ -38,7 +38,7 @@ This project does not replace Helium 10, Jungle Scout, Keepa or other specialize
 - Extract JSON-LD Product data when available
 - Extract HTML specification tables and definition-list specifications
 - Preserve source URL, status code, domain and collection timestamp
-- Export Products, Raw Specifications, Normalized Specifications, Fetch Logs and Issues worksheets
+- Export Products, Raw Specifications, Normalized Specifications, Specification Matrix, Coverage Summary, Gap Analysis, Fetch Logs and Issues worksheets
 
 See [Public Product Page Connector](docs/product-page-connector.md).
 
@@ -51,14 +51,17 @@ See [Public Product Page Connector](docs/product-page-connector.md).
 - Download vehicle camera specification template
 - Each template includes a data dictionary and example sheet
 
-### Specification Foundation
+### Specification Foundation and Gap Analysis
 
 - Initial hardware specification field dictionary
 - English and Chinese specification aliases
 - Raw supplier specification name mapping
-- Normalized Specifications export for product page connector results
+- Product-by-specification matrix
+- Field coverage summary
+- Required-field gap analysis
+- Low / medium / high risk level based on missing required fields
 
-See [Specification Foundation](docs/specification-foundation.md).
+See [Specification Matrix and Gap Analysis](docs/specification-matrix.md).
 
 ### Market and Profit Analysis
 
@@ -92,9 +95,7 @@ The project does **not**:
 - Bypass paywalls or site restrictions
 - Perform high-frequency crawling
 
-## Data Collection Workflow
-
-Recommended workflow:
+## Recommended Workflow
 
 ```text
 Download template
@@ -103,7 +104,11 @@ Download template
 → Review issues
 → Export normalized workbook
 → Analyze market and profit
-→ Use normalized specs for product definition
+→ Collect product URLs
+→ Review normalized specs
+→ Compare specification matrix
+→ Review coverage and gaps
+→ Define next product requirements
 ```
 
 See [Data Collection Guide](docs/data-collection-guide.md).
@@ -143,14 +148,14 @@ python -m pytest -q
 
 ## Roadmap
 
-- [ ] Security camera specification matrix
-- [ ] Vehicle imaging specification matrix
-- [ ] Specification gap analysis
+- [ ] Security camera specification matrix refinements
+- [ ] Vehicle imaging specification matrix refinements
 - [ ] Supplier scoring model
 - [ ] Compliance matrix
 - [ ] PDF datasheet extraction
 - [ ] Word / PDF research report export
 - [ ] Domain-specific supplier website adapters
+- [ ] Browser-assisted data capture
 
 ## License
 
