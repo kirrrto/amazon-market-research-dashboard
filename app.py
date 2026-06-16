@@ -7,7 +7,13 @@ import pandas as pd
 import streamlit as st
 
 from src.analysis import brand_summary, price_band_summary, summarize_market
-from src.connectors.export import build_product_page_workbook, normalized_specs_frame
+from src.connectors.export import (
+    build_product_page_workbook,
+    coverage_summary_frame,
+    gap_analysis_frame,
+    normalized_specs_frame,
+    specification_matrix_frame,
+)
 from src.connectors.product_page import collect_product_pages
 from src.finance import ProfitAssumptions
 from src.i18n import (
@@ -34,6 +40,7 @@ from src.importers.tabular import (
     read_tabular_file,
 )
 from src.importers.validation import validate_and_clean_import
+from src.specs import list_spec_profiles
 from src.templates import build_template_workbook, list_template_definitions
 
 
@@ -184,6 +191,17 @@ if data_source_mode == "urls":
     st.caption(t("product_page_connector_caption", language))
     st.warning(t("connector_scope_warning", language), icon="⚠️")
 
+    profile_options = {
+        profile.label(language): profile.profile_id
+        for profile in list_spec_profiles()
+    }
+    selected_profile_label = st.selectbox(
+        "Spec profile" if language == "en" else "规格配置模板",
+        list(profile_options.keys()),
+        index=0,
+    )
+    selected_profile = profile_options[selected_profile_label]
+
     url_text = st.text_area(
         t("product_page_urls", language),
         height=180,
@@ -222,6 +240,13 @@ if data_source_mode == "urls":
     products_frame = connector_result.products_frame
     specs_frame = connector_result.raw_specs_frame
     normalized_frame = normalized_specs_frame(connector_result, language)
+    matrix_frame = specification_matrix_frame(connector_result, language)
+    coverage_frame = coverage_summary_frame(connector_result, language)
+    gaps_frame = gap_analysis_frame(
+        connector_result,
+        profile=selected_profile,
+        language=language,
+    )
     logs_frame = connector_result.fetch_logs_frame
     issues_frame = connector_result.issues_frame
 
@@ -235,11 +260,14 @@ if data_source_mode == "urls":
     metric_3.metric(t("raw_specs", language), f"{len(specs_frame):,}")
     metric_4.metric(t("issues", language), f"{len(issues_frame):,}")
 
-    tab_products, tab_specs, tab_normalized, tab_logs, tab_issues = st.tabs(
+    tab_products, tab_specs, tab_normalized, tab_matrix, tab_coverage, tab_gaps, tab_logs, tab_issues = st.tabs(
         [
             t("products", language),
             t("raw_specifications", language),
             t("normalized_specifications", language),
+            t("specification_matrix", language),
+            t("coverage_summary", language),
+            t("gap_analysis", language),
             t("fetch_logs", language),
             t("issues", language),
         ]
@@ -250,6 +278,34 @@ if data_source_mode == "urls":
         st.dataframe(_localized_frame(specs_frame, language), use_container_width=True, hide_index=True)
     with tab_normalized:
         st.dataframe(_localized_frame(normalized_frame, language), use_container_width=True, hide_index=True)
+    with tab_matrix:
+        st.dataframe(_localized_frame(matrix_frame, language), use_container_width=True, hide_index=True)
+    with tab_coverage:
+        coverage_display = _localized_frame(coverage_frame, language)
+        st.dataframe(
+            coverage_display,
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                column_label("coverage_rate", language): st.column_config.NumberColumn(
+                    column_label("coverage_rate", language),
+                    format="percent",
+                ),
+            },
+        )
+    with tab_gaps:
+        gaps_display = _localized_frame(gaps_frame, language)
+        st.dataframe(
+            gaps_display,
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                column_label("completion_rate", language): st.column_config.NumberColumn(
+                    column_label("completion_rate", language),
+                    format="percent",
+                ),
+            },
+        )
     with tab_logs:
         st.dataframe(_localized_frame(logs_frame, language), use_container_width=True, hide_index=True)
     with tab_issues:
@@ -264,7 +320,11 @@ if data_source_mode == "urls":
 
     st.download_button(
         t("download_product_page_workbook", language),
-        data=build_product_page_workbook(connector_result, language=export_language),
+        data=build_product_page_workbook(
+            connector_result,
+            language=export_language,
+            profile=selected_profile,
+        ),
         file_name="product_page_import.xlsx",
         mime=(
             "application/vnd.openxmlformats-officedocument."
