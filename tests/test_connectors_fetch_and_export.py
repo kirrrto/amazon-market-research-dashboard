@@ -122,9 +122,13 @@ def test_product_page_workbook_contains_expected_sheets():
         "Products",
         "Raw Specifications",
         "Normalized Specifications",
+        "Specification Matrix",
+        "Coverage Summary",
+        "Gap Analysis",
         "Fetch Logs",
         "Issues",
     ]
+
     products = pd.read_excel(BytesIO(workbook), sheet_name="Products", engine="openpyxl")
     specs = pd.read_excel(BytesIO(workbook), sheet_name="Raw Specifications", engine="openpyxl")
     normalized = pd.read_excel(
@@ -132,6 +136,25 @@ def test_product_page_workbook_contains_expected_sheets():
         sheet_name="Normalized Specifications",
         engine="openpyxl",
     )
+    matrix = pd.read_excel(
+        BytesIO(workbook),
+        sheet_name="Specification Matrix",
+        engine="openpyxl",
+    )
+    coverage = pd.read_excel(
+        BytesIO(workbook),
+        sheet_name="Coverage Summary",
+        engine="openpyxl",
+    )
+    gaps = pd.read_excel(
+        BytesIO(workbook),
+        sheet_name="Gap Analysis",
+        engine="openpyxl",
+    )
+
     assert products.loc[0, "title"] == "Wireless Backup Camera"
     assert specs.loc[0, "spec_name"] == "Resolution"
     assert normalized.loc[0, "standard_field"] == "resolution"
+    assert "resolution" in matrix.columns
+    assert "coverage_rate" in coverage.columns
+    assert "risk_level" in gaps.columns
