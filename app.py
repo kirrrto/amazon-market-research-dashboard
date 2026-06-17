@@ -10,9 +10,12 @@ from src.analysis import brand_summary, price_band_summary, summarize_market
 from src.connectors.export import (
     build_product_page_workbook,
     coverage_summary_frame,
+    decision_summary_frame,
     gap_analysis_frame,
     normalized_specs_frame,
+    requirement_draft_frame,
     specification_matrix_frame,
+    supplier_follow_up_frame,
 )
 from src.connectors.product_page import collect_product_pages
 from src.finance import ProfitAssumptions
@@ -247,6 +250,21 @@ if data_source_mode == "urls":
         profile=selected_profile,
         language=language,
     )
+    requirement_frame = requirement_draft_frame(
+        connector_result,
+        profile=selected_profile,
+        language=language,
+    )
+    supplier_follow_up = supplier_follow_up_frame(
+        connector_result,
+        profile=selected_profile,
+        language=language,
+    )
+    decision_summary = decision_summary_frame(
+        connector_result,
+        profile=selected_profile,
+        language=language,
+    )
     logs_frame = connector_result.fetch_logs_frame
     issues_frame = connector_result.issues_frame
 
@@ -260,7 +278,19 @@ if data_source_mode == "urls":
     metric_3.metric(t("raw_specs", language), f"{len(specs_frame):,}")
     metric_4.metric(t("issues", language), f"{len(issues_frame):,}")
 
-    tab_products, tab_specs, tab_normalized, tab_matrix, tab_coverage, tab_gaps, tab_logs, tab_issues = st.tabs(
+    (
+        tab_products,
+        tab_specs,
+        tab_normalized,
+        tab_matrix,
+        tab_coverage,
+        tab_gaps,
+        tab_requirement,
+        tab_follow_up,
+        tab_decision,
+        tab_logs,
+        tab_issues,
+    ) = st.tabs(
         [
             t("products", language),
             t("raw_specifications", language),
@@ -268,6 +298,9 @@ if data_source_mode == "urls":
             t("specification_matrix", language),
             t("coverage_summary", language),
             t("gap_analysis", language),
+            t("requirement_draft", language),
+            t("supplier_follow_up", language),
+            t("decision_summary", language),
             t("fetch_logs", language),
             t("issues", language),
         ]
@@ -297,6 +330,31 @@ if data_source_mode == "urls":
         gaps_display = _localized_frame(gaps_frame, language)
         st.dataframe(
             gaps_display,
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                column_label("completion_rate", language): st.column_config.NumberColumn(
+                    column_label("completion_rate", language),
+                    format="percent",
+                ),
+            },
+        )
+    with tab_requirement:
+        st.dataframe(
+            _localized_frame(requirement_frame, language),
+            use_container_width=True,
+            hide_index=True,
+        )
+    with tab_follow_up:
+        st.dataframe(
+            _localized_frame(supplier_follow_up, language),
+            use_container_width=True,
+            hide_index=True,
+        )
+    with tab_decision:
+        decision_display = _localized_frame(decision_summary, language)
+        st.dataframe(
+            decision_display,
             use_container_width=True,
             hide_index=True,
             column_config={
