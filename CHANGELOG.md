@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Added product requirement draft generation from specification matrix and gap risk data
+- Added supplier follow-up question generation from missing specification fields
+- Added decision summary generation based on gap analysis risk levels
+- Added Product Requirement Draft, Supplier Follow-up Questions and Decision Summary sheets to connector exports
+- Added Streamlit tabs for requirement draft, supplier follow-up and decision summary
+- Added bilingual sheet and column labels for product requirement outputs
+- Added documentation for requirement draft and supplier follow-up workflows
+
+## 0.4.0
+
 - Added specification matrix builder
 - Added specification coverage summary
 - Added required specification profiles for generic hardware, security cameras and vehicle imaging products

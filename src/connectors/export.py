@@ -6,6 +6,11 @@ import pandas as pd
 from openpyxl.styles import Font, PatternFill
 
 from src.i18n import column_label, normalize_language, sheet_label
+from src.requirements import (
+    build_decision_summary,
+    build_requirement_draft,
+    build_supplier_follow_up_questions,
+)
 from src.specs import (
     build_coverage_summary,
     build_gap_analysis,
@@ -48,8 +53,6 @@ def _format_percent_columns(worksheet, headers_to_format: set[str]) -> None:
 
 
 def _localized_frame(frame: pd.DataFrame, language: str) -> pd.DataFrame:
-    if frame.empty:
-        return frame.rename(columns={column: column_label(str(column), language) for column in frame.columns})
     return frame.rename(columns={column: column_label(str(column), language) for column in frame.columns})
 
 
@@ -117,6 +120,42 @@ def gap_analysis_frame(
     return build_gap_analysis(matrix, profile=profile, language=language)
 
 
+def requirement_draft_frame(
+    result: FetchResult,
+    *,
+    profile: str = "generic_hardware",
+    language: str = "en",
+) -> pd.DataFrame:
+    matrix = specification_matrix_frame(result, language=language)
+    gaps = gap_analysis_frame(result, profile=profile, language=language)
+    return build_requirement_draft(
+        matrix,
+        gap_analysis=gaps,
+        profile=profile,
+        language=language,
+    )
+
+
+def supplier_follow_up_frame(
+    result: FetchResult,
+    *,
+    profile: str = "generic_hardware",
+    language: str = "en",
+) -> pd.DataFrame:
+    gaps = gap_analysis_frame(result, profile=profile, language=language)
+    return build_supplier_follow_up_questions(gaps, language=language)
+
+
+def decision_summary_frame(
+    result: FetchResult,
+    *,
+    profile: str = "generic_hardware",
+    language: str = "en",
+) -> pd.DataFrame:
+    gaps = gap_analysis_frame(result, profile=profile, language=language)
+    return build_decision_summary(gaps, language=language)
+
+
 def build_product_page_workbook(
     result: FetchResult,
     language: str = "en",
@@ -133,6 +172,18 @@ def build_product_page_workbook(
     matrix = _localized_frame(specification_matrix_frame(result, code), code)
     coverage = _localized_frame(coverage_summary_frame(result, code), code)
     gaps = _localized_frame(gap_analysis_frame(result, profile=profile, language=code), code)
+    requirement_draft = _localized_frame(
+        requirement_draft_frame(result, profile=profile, language=code),
+        code,
+    )
+    supplier_follow_up = _localized_frame(
+        supplier_follow_up_frame(result, profile=profile, language=code),
+        code,
+    )
+    decision_summary = _localized_frame(
+        decision_summary_frame(result, profile=profile, language=code),
+        code,
+    )
     fetch_logs = _localized_frame(result.fetch_logs_frame, code)
     issues = _localized_frame(result.issues_frame, code)
 
@@ -143,6 +194,9 @@ def build_product_page_workbook(
         sheet_label("specification_matrix", code),
         sheet_label("coverage_summary", code),
         sheet_label("gap_analysis", code),
+        sheet_label("requirement_draft", code),
+        sheet_label("supplier_follow_up", code),
+        sheet_label("decision_summary", code),
         sheet_label("fetch_logs", code),
         sheet_label("issues", code),
     ]
@@ -154,8 +208,11 @@ def build_product_page_workbook(
         matrix.to_excel(writer, sheet_name=sheet_names[3], index=False)
         coverage.to_excel(writer, sheet_name=sheet_names[4], index=False)
         gaps.to_excel(writer, sheet_name=sheet_names[5], index=False)
-        fetch_logs.to_excel(writer, sheet_name=sheet_names[6], index=False)
-        issues.to_excel(writer, sheet_name=sheet_names[7], index=False)
+        requirement_draft.to_excel(writer, sheet_name=sheet_names[6], index=False)
+        supplier_follow_up.to_excel(writer, sheet_name=sheet_names[7], index=False)
+        decision_summary.to_excel(writer, sheet_name=sheet_names[8], index=False)
+        fetch_logs.to_excel(writer, sheet_name=sheet_names[9], index=False)
+        issues.to_excel(writer, sheet_name=sheet_names[10], index=False)
 
         for sheet_name in sheet_names:
             _style_sheet(writer.book[sheet_name])
@@ -166,6 +223,10 @@ def build_product_page_workbook(
         )
         _format_percent_columns(
             writer.book[sheet_names[5]],
+            {column_label("completion_rate", code), "completion_rate"},
+        )
+        _format_percent_columns(
+            writer.book[sheet_names[8]],
             {column_label("completion_rate", code), "completion_rate"},
         )
 

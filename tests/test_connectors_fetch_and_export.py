@@ -125,6 +125,9 @@ def test_product_page_workbook_contains_expected_sheets():
         "Specification Matrix",
         "Coverage Summary",
         "Gap Analysis",
+        "Product Requirement Draft",
+        "Supplier Follow-up Questions",
+        "Decision Summary",
         "Fetch Logs",
         "Issues",
     ]

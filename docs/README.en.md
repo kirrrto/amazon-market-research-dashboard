@@ -4,7 +4,7 @@
 
 This dashboard is designed for Amazon product developers, ecommerce product managers and hardware sourcing teams who need to turn mixed research data into practical product decisions.
 
-It supports spreadsheet imports, public supplier product page collection, data validation, profit estimation, hardware specification normalization, specification matrix generation and missing-field gap analysis.
+It supports spreadsheet imports, public supplier product page collection, data validation, profit estimation, hardware specification normalization, specification matrix generation, gap analysis, product requirement drafts and supplier follow-up questions.
 
 ## Key workflows
 
@@ -66,6 +66,18 @@ The app can generate:
 
 This helps identify which products include important parameters and which products require follow-up with suppliers.
 
+### 5. Requirement draft and supplier follow-up
+
+Use this workflow after gap analysis.
+
+The app can generate:
+
+- Product Requirement Draft
+- Supplier Follow-up Questions
+- Decision Summary
+
+These outputs help product developers turn analysis results into actionable supplier and engineering follow-up.
+
 ## What this tool does not do
 
 This tool does not bypass access restrictions.
@@ -79,6 +91,7 @@ It does not:
 - Bypass paywalls
 - Perform high-frequency crawling
 - Verify supplier claims automatically
+- Make final product launch decisions
 
 ## Recommended first use
 
@@ -89,7 +102,8 @@ It does not:
 5. Upload the file or paste product URLs.
 6. Review issues and normalized results.
 7. Review Specification Matrix, Coverage Summary and Gap Analysis.
-8. Export the workbook for team review.
+8. Review Product Requirement Draft, Supplier Follow-up Questions and Decision Summary.
+9. Export the workbook for team review.
 
 ## Local setup
 
