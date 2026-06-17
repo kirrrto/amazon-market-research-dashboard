@@ -66,6 +66,9 @@ TEXT: dict[str, dict[str, str]] = {
         "specification_matrix": "Specification Matrix",
         "coverage_summary": "Coverage Summary",
         "gap_analysis": "Gap Analysis",
+        "requirement_draft": "Requirement Draft",
+        "supplier_follow_up": "Supplier Follow-up",
+        "decision_summary": "Decision Summary",
         "fetch_logs": "Fetch Logs",
         "issues": "Issues",
         "successful_fetches": "Successful fetches",
@@ -95,25 +98,6 @@ TEXT: dict[str, dict[str, str]] = {
         "brand_filter": "Brands",
         "export_language": "Export language",
         "not_mapped": "— Not mapped —",
-        "missing_required_fields": "Required fields are not mapped: {fields}",
-        "duplicate_source_columns": "Each source column can only be assigned once: {columns}",
-        "url_empty": "URL is empty.",
-        "unsupported_url_scheme": "Unsupported URL scheme '{scheme}'. Only http and https are supported.",
-        "localhost_not_supported": "Localhost URLs are not supported by this connector.",
-        "duplicate_url_skipped": "Duplicate URL was skipped.",
-        "fetch_timeout": "Request timed out after {seconds:g} seconds.",
-        "fetch_not_html": (
-            "The URL was fetched but did not return an HTML document "
-            "(content-type: {content_type})."
-        ),
-        "fetch_http_error": "HTTP {status_code} returned for URL.",
-        "no_product_data": "No product title or specification data was detected.",
-        "missing_asin": "ASIN is required; the row will be rejected.",
-        "duplicate_asin": "Duplicate ASIN; only the first row will be retained.",
-        "invalid_numeric": "{field} could not be converted to a number.",
-        "negative_value_normalized": "Negative {field} will be normalized to zero.",
-        "rating_out_of_range": "Rating will be limited to the 0–5 range.",
-        "blank_value_normalized": "Blank {field} will be replaced with '{replacement}'.",
     },
     "zh-CN": {
         "app_title": "亚马逊市场调研仪表盘",
@@ -160,6 +144,9 @@ TEXT: dict[str, dict[str, str]] = {
         "specification_matrix": "规格矩阵",
         "coverage_summary": "覆盖率汇总",
         "gap_analysis": "缺口分析",
+        "requirement_draft": "需求草案",
+        "supplier_follow_up": "供应商追问",
+        "decision_summary": "决策摘要",
         "fetch_logs": "抓取日志",
         "issues": "问题记录",
         "successful_fetches": "成功抓取",
@@ -186,22 +173,6 @@ TEXT: dict[str, dict[str, str]] = {
         "brand_filter": "品牌",
         "export_language": "导出语言",
         "not_mapped": "— 未映射 —",
-        "missing_required_fields": "以下必需字段尚未映射：{fields}",
-        "duplicate_source_columns": "同一个源字段只能映射一次：{columns}",
-        "url_empty": "URL 不能为空。",
-        "unsupported_url_scheme": "不支持的 URL 协议“{scheme}”。仅支持 http 和 https。",
-        "localhost_not_supported": "当前连接器不支持 localhost 链接。",
-        "duplicate_url_skipped": "重复 URL 已跳过。",
-        "fetch_timeout": "请求在 {seconds:g} 秒后超时。",
-        "fetch_not_html": "该 URL 已访问成功，但返回的不是 HTML 文档（content-type：{content_type}）。",
-        "fetch_http_error": "该 URL 返回 HTTP {status_code}。",
-        "no_product_data": "未检测到产品标题或规格数据。",
-        "missing_asin": "ASIN 不能为空，该行将被排除。",
-        "duplicate_asin": "ASIN 重复，仅保留第一条记录。",
-        "invalid_numeric": "{field} 无法转换为数字。",
-        "negative_value_normalized": "{field} 为负数，将被归零。",
-        "rating_out_of_range": "评分将被限制在 0–5 范围内。",
-        "blank_value_normalized": "{field} 为空，将替换为“{replacement}”。",
     },
 }
 
@@ -216,6 +187,9 @@ SHEET_LABELS: dict[str, dict[str, str]] = {
         "specification_matrix": "Specification Matrix",
         "coverage_summary": "Coverage Summary",
         "gap_analysis": "Gap Analysis",
+        "requirement_draft": "Product Requirement Draft",
+        "supplier_follow_up": "Supplier Follow-up Questions",
+        "decision_summary": "Decision Summary",
         "fetch_logs": "Fetch Logs",
         "data_dictionary": "Data Dictionary",
         "example": "Example",
@@ -233,6 +207,9 @@ SHEET_LABELS: dict[str, dict[str, str]] = {
         "specification_matrix": "规格矩阵",
         "coverage_summary": "覆盖率汇总",
         "gap_analysis": "缺口分析",
+        "requirement_draft": "产品需求草案",
+        "supplier_follow_up": "供应商追问清单",
+        "decision_summary": "决策摘要",
         "fetch_logs": "抓取日志",
         "data_dictionary": "数据字典",
         "example": "示例",
@@ -317,13 +294,26 @@ COLUMN_LABELS: dict[str, dict[str, str]] = {
         "field_of_view": "视场角",
         "anti_vibration": "抗震",
         "power_consumption": "功耗",
+        "requirement_field": "需求字段",
+        "requirement_label": "需求名称",
+        "current_value": "当前值",
+        "evidence_source": "证据来源",
+        "action": "动作",
+        "notes": "备注",
+        "missing_field": "缺失字段",
+        "missing_label": "缺失字段名称",
+        "question": "追问问题",
+        "priority": "优先级",
+        "owner": "负责人",
+        "recommendation": "建议",
+        "next_action": "下一步动作",
+        "decision_owner": "决策负责人",
+        "decision_status": "决策状态",
     },
 }
 
 
 def normalize_language(language: str | None) -> str:
-    """Return a supported language code, falling back to English."""
-
     if not language:
         return DEFAULT_LANGUAGE
 
@@ -350,13 +340,6 @@ def language_display_name(language: str | None) -> str:
 
 
 def t(key: str, language: str | None = DEFAULT_LANGUAGE, **kwargs: Any) -> str:
-    """Translate a UI text key.
-
-    Missing keys fall back to English; if the key is unknown in all languages,
-    the key itself is returned. Keyword arguments are applied through
-    ``str.format``.
-    """
-
     code = normalize_language(language)
     template = TEXT.get(code, {}).get(key) or TEXT[DEFAULT_LANGUAGE].get(key) or key
 
