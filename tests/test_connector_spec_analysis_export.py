@@ -103,6 +103,9 @@ def test_product_page_workbook_exports_spec_analysis_sheets():
         "Specification Matrix",
         "Coverage Summary",
         "Gap Analysis",
+        "Product Requirement Draft",
+        "Supplier Follow-up Questions",
+        "Decision Summary",
         "Fetch Logs",
         "Issues",
     ]
@@ -127,6 +130,9 @@ def test_product_page_workbook_exports_chinese_spec_analysis_sheets():
         "规格矩阵",
         "覆盖率汇总",
         "缺口分析",
+        "产品需求草案",
+        "供应商追问清单",
+        "决策摘要",
         "抓取日志",
         "问题记录",
     ]
