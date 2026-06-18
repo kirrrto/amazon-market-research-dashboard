@@ -12,9 +12,12 @@ from src.connectors.export import (
     coverage_summary_frame,
     decision_summary_frame,
     gap_analysis_frame,
+    product_pool_summary_frame,
+    product_readiness_summary_frame,
     normalized_specs_frame,
     requirement_draft_frame,
     specification_matrix_frame,
+    supplier_comparison_frame,
     supplier_follow_up_frame,
 )
 from src.connectors.product_page import collect_product_pages
@@ -265,6 +268,21 @@ if data_source_mode == "urls":
         profile=selected_profile,
         language=language,
     )
+    product_readiness = product_readiness_summary_frame(
+        connector_result,
+        profile=selected_profile,
+        language=language,
+    )
+    supplier_comparison = supplier_comparison_frame(
+        connector_result,
+        profile=selected_profile,
+        language=language,
+    )
+    product_pool = product_pool_summary_frame(
+        connector_result,
+        profile=selected_profile,
+        language=language,
+    )
     logs_frame = connector_result.fetch_logs_frame
     issues_frame = connector_result.issues_frame
 
@@ -278,6 +296,28 @@ if data_source_mode == "urls":
     metric_3.metric(t("raw_specs", language), f"{len(specs_frame):,}")
     metric_4.metric(t("issues", language), f"{len(issues_frame):,}")
 
+    score_1, score_2, score_3, score_4 = st.columns(4)
+    avg_readiness = 0 if product_readiness.empty else product_readiness["readiness_score"].mean()
+    review_candidates = 0 if product_pool.empty else int((product_pool["priority"] == "P1").sum())
+    supplier_count = len(supplier_comparison)
+    follow_up_questions = 0 if supplier_follow_up.empty else len(supplier_follow_up)
+    score_1.metric(
+        "Average readiness" if language == "en" else "平均就绪度",
+        f"{avg_readiness:.1f}",
+    )
+    score_2.metric(
+        "Review candidates" if language == "en" else "评审候选",
+        f"{review_candidates:,}",
+    )
+    score_3.metric(
+        "Suppliers" if language == "en" else "供应商",
+        f"{supplier_count:,}",
+    )
+    score_4.metric(
+        "Follow-up questions" if language == "en" else "追问问题",
+        f"{follow_up_questions:,}",
+    )
+
     (
         tab_products,
         tab_specs,
@@ -288,6 +328,9 @@ if data_source_mode == "urls":
         tab_requirement,
         tab_follow_up,
         tab_decision,
+        tab_readiness,
+        tab_supplier_comparison,
+        tab_product_pool,
         tab_logs,
         tab_issues,
     ) = st.tabs(
@@ -301,6 +344,9 @@ if data_source_mode == "urls":
             t("requirement_draft", language),
             t("supplier_follow_up", language),
             t("decision_summary", language),
+            t("product_readiness_summary", language),
+            t("supplier_comparison", language),
+            t("product_pool_summary", language),
             t("fetch_logs", language),
             t("issues", language),
         ]
@@ -360,6 +406,53 @@ if data_source_mode == "urls":
             column_config={
                 column_label("completion_rate", language): st.column_config.NumberColumn(
                     column_label("completion_rate", language),
+                    format="percent",
+                ),
+            },
+        )
+    with tab_readiness:
+        readiness_display = _localized_frame(product_readiness, language)
+        st.dataframe(
+            readiness_display,
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                column_label("completion_rate", language): st.column_config.NumberColumn(
+                    column_label("completion_rate", language),
+                    format="percent",
+                ),
+                column_label("metadata_completeness", language): st.column_config.NumberColumn(
+                    column_label("metadata_completeness", language),
+                    format="percent",
+                ),
+            },
+        )
+    with tab_supplier_comparison:
+        supplier_display = _localized_frame(supplier_comparison, language)
+        st.dataframe(
+            supplier_display,
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                column_label("average_completion_rate", language): st.column_config.NumberColumn(
+                    column_label("average_completion_rate", language),
+                    format="percent",
+                ),
+            },
+        )
+    with tab_product_pool:
+        product_pool_display = _localized_frame(product_pool, language)
+        st.dataframe(
+            product_pool_display,
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                column_label("completion_rate", language): st.column_config.NumberColumn(
+                    column_label("completion_rate", language),
+                    format="percent",
+                ),
+                column_label("metadata_completeness", language): st.column_config.NumberColumn(
+                    column_label("metadata_completeness", language),
                     format="percent",
                 ),
             },
