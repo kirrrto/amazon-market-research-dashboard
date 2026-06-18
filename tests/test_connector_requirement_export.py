@@ -95,6 +95,9 @@ def test_product_page_workbook_exports_requirement_sheets():
         "Product Requirement Draft",
         "Supplier Follow-up Questions",
         "Decision Summary",
+        "Product Readiness Summary",
+        "Supplier Comparison",
+        "Product Pool Summary",
         "Fetch Logs",
         "Issues",
     ]

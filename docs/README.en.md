@@ -2,9 +2,9 @@
 
 ## What this tool is for
 
-This dashboard is designed for Amazon product developers, ecommerce product managers and hardware sourcing teams who need to turn mixed research data into practical product decisions.
+This dashboard is designed for Amazon product developers, ecommerce product managers and hardware sourcing teams who need to turn mixed research data into practical product development decisions.
 
-It supports spreadsheet imports, public supplier product page collection, data validation, profit estimation, hardware specification normalization, specification matrix generation, gap analysis, product requirement drafts and supplier follow-up questions.
+It supports spreadsheet imports, public supplier product page collection, data validation, profit estimation, hardware specification normalization, specification matrix generation, gap analysis, product requirement drafts, supplier follow-up questions, product readiness scoring, supplier comparison and product pool prioritization.
 
 ## Key workflows
 
@@ -78,6 +78,18 @@ The app can generate:
 
 These outputs help product developers turn analysis results into actionable supplier and engineering follow-up.
 
+### 6. Readiness score and supplier comparison
+
+Use this workflow when several products or suppliers need to be compared.
+
+The app can generate:
+
+- Product Readiness Summary
+- Supplier Comparison
+- Product Pool Summary
+
+These outputs help product teams prioritize review candidates, supplier follow-up and risk review items.
+
 ## What this tool does not do
 
 This tool does not bypass access restrictions.
@@ -103,7 +115,8 @@ It does not:
 6. Review issues and normalized results.
 7. Review Specification Matrix, Coverage Summary and Gap Analysis.
 8. Review Product Requirement Draft, Supplier Follow-up Questions and Decision Summary.
-9. Export the workbook for team review.
+9. Review Product Readiness Summary, Supplier Comparison and Product Pool Summary.
+10. Export the workbook for team review.
 
 ## Local setup
 

@@ -6,17 +6,20 @@ import pandas as pd
 from openpyxl.styles import Font, PatternFill
 
 from src.i18n import column_label, normalize_language, sheet_label
+from src.products import build_product_pool_summary
 from src.requirements import (
     build_decision_summary,
     build_requirement_draft,
     build_supplier_follow_up_questions,
 )
+from src.scoring import build_product_readiness_summary
 from src.specs import (
     build_coverage_summary,
     build_gap_analysis,
     build_specification_matrix,
     normalize_raw_specifications,
 )
+from src.suppliers import build_supplier_comparison
 
 from .models import FetchResult
 
@@ -156,6 +159,60 @@ def decision_summary_frame(
     return build_decision_summary(gaps, language=language)
 
 
+
+
+def product_readiness_summary_frame(
+    result: FetchResult,
+    *,
+    profile: str = "generic_hardware",
+    language: str = "en",
+) -> pd.DataFrame:
+    gaps = gap_analysis_frame(result, profile=profile, language=language)
+    follow_up = supplier_follow_up_frame(result, profile=profile, language=language)
+    requirement_draft = requirement_draft_frame(result, profile=profile, language=language)
+    return build_product_readiness_summary(
+        gaps,
+        supplier_follow_up=follow_up,
+        requirement_draft=requirement_draft,
+        language=language,
+    )
+
+
+def supplier_comparison_frame(
+    result: FetchResult,
+    *,
+    profile: str = "generic_hardware",
+    language: str = "en",
+) -> pd.DataFrame:
+    readiness = product_readiness_summary_frame(result, profile=profile, language=language)
+    follow_up = supplier_follow_up_frame(result, profile=profile, language=language)
+    requirement_draft = requirement_draft_frame(result, profile=profile, language=language)
+    return build_supplier_comparison(
+        readiness,
+        supplier_follow_up=follow_up,
+        requirement_draft=requirement_draft,
+        language=language,
+    )
+
+
+def product_pool_summary_frame(
+    result: FetchResult,
+    *,
+    profile: str = "generic_hardware",
+    language: str = "en",
+) -> pd.DataFrame:
+    readiness = product_readiness_summary_frame(result, profile=profile, language=language)
+    suppliers = supplier_comparison_frame(result, profile=profile, language=language)
+    follow_up = supplier_follow_up_frame(result, profile=profile, language=language)
+    requirement_draft = requirement_draft_frame(result, profile=profile, language=language)
+    return build_product_pool_summary(
+        readiness,
+        supplier_comparison=suppliers,
+        supplier_follow_up=follow_up,
+        requirement_draft=requirement_draft,
+        language=language,
+    )
+
 def build_product_page_workbook(
     result: FetchResult,
     language: str = "en",
@@ -184,6 +241,18 @@ def build_product_page_workbook(
         decision_summary_frame(result, profile=profile, language=code),
         code,
     )
+    product_readiness = _localized_frame(
+        product_readiness_summary_frame(result, profile=profile, language=code),
+        code,
+    )
+    supplier_comparison = _localized_frame(
+        supplier_comparison_frame(result, profile=profile, language=code),
+        code,
+    )
+    product_pool = _localized_frame(
+        product_pool_summary_frame(result, profile=profile, language=code),
+        code,
+    )
     fetch_logs = _localized_frame(result.fetch_logs_frame, code)
     issues = _localized_frame(result.issues_frame, code)
 
@@ -197,6 +266,9 @@ def build_product_page_workbook(
         sheet_label("requirement_draft", code),
         sheet_label("supplier_follow_up", code),
         sheet_label("decision_summary", code),
+        sheet_label("product_readiness_summary", code),
+        sheet_label("supplier_comparison", code),
+        sheet_label("product_pool_summary", code),
         sheet_label("fetch_logs", code),
         sheet_label("issues", code),
     ]
@@ -211,8 +283,11 @@ def build_product_page_workbook(
         requirement_draft.to_excel(writer, sheet_name=sheet_names[6], index=False)
         supplier_follow_up.to_excel(writer, sheet_name=sheet_names[7], index=False)
         decision_summary.to_excel(writer, sheet_name=sheet_names[8], index=False)
-        fetch_logs.to_excel(writer, sheet_name=sheet_names[9], index=False)
-        issues.to_excel(writer, sheet_name=sheet_names[10], index=False)
+        product_readiness.to_excel(writer, sheet_name=sheet_names[9], index=False)
+        supplier_comparison.to_excel(writer, sheet_name=sheet_names[10], index=False)
+        product_pool.to_excel(writer, sheet_name=sheet_names[11], index=False)
+        fetch_logs.to_excel(writer, sheet_name=sheet_names[12], index=False)
+        issues.to_excel(writer, sheet_name=sheet_names[13], index=False)
 
         for sheet_name in sheet_names:
             _style_sheet(writer.book[sheet_name])
@@ -228,6 +303,28 @@ def build_product_page_workbook(
         _format_percent_columns(
             writer.book[sheet_names[8]],
             {column_label("completion_rate", code), "completion_rate"},
+        )
+        _format_percent_columns(
+            writer.book[sheet_names[9]],
+            {
+                column_label("completion_rate", code),
+                "completion_rate",
+                column_label("metadata_completeness", code),
+                "metadata_completeness",
+            },
+        )
+        _format_percent_columns(
+            writer.book[sheet_names[10]],
+            {column_label("average_completion_rate", code), "average_completion_rate"},
+        )
+        _format_percent_columns(
+            writer.book[sheet_names[11]],
+            {
+                column_label("completion_rate", code),
+                "completion_rate",
+                column_label("metadata_completeness", code),
+                "metadata_completeness",
+            },
         )
 
     buffer.seek(0)
