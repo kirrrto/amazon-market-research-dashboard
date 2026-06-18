@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- Added product readiness scoring from gap analysis, metadata completeness and supplier follow-up counts
+- Added readiness status labels: Ready for Review, Follow-up Required, High Risk and Not Ready
+- Added supplier comparison generator with supplier-level readiness, missing-field and follow-up metrics
+- Added product pool summary with P1-P4 prioritization
+- Added Product Readiness Summary, Supplier Comparison and Product Pool Summary workbook sheets
+- Added Streamlit dashboard metrics for average readiness, review candidates, supplier count and follow-up questions
+- Added Streamlit tabs for Readiness Score, Supplier Comparison and Product Pool
+- Added bilingual labels for readiness, supplier comparison and product pool outputs
+- Added documentation for product readiness score and supplier comparison workflows
+
+## 0.5.0
+
 - Added product requirement draft generation from specification matrix and gap risk data
 - Added supplier follow-up question generation from missing specification fields
 - Added decision summary generation based on gap analysis risk levels
