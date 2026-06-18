@@ -106,6 +106,9 @@ def test_product_page_workbook_exports_spec_analysis_sheets():
         "Product Requirement Draft",
         "Supplier Follow-up Questions",
         "Decision Summary",
+        "Product Readiness Summary",
+        "Supplier Comparison",
+        "Product Pool Summary",
         "Fetch Logs",
         "Issues",
     ]
@@ -133,6 +136,9 @@ def test_product_page_workbook_exports_chinese_spec_analysis_sheets():
         "产品需求草案",
         "供应商追问清单",
         "决策摘要",
+        "产品就绪度汇总",
+        "供应商对比",
+        "产品池汇总",
         "抓取日志",
         "问题记录",
     ]
