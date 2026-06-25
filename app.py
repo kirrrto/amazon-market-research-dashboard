@@ -305,13 +305,14 @@ if data_source_mode == "urls":
                     localized,
                     format="percent",
                 )
-        st.dataframe(
-            display,
-            use_container_width=True,
-            hide_index=True,
-            height=height,
-            column_config=column_config,
-        )
+        dataframe_kwargs = {
+            "use_container_width": True,
+            "hide_index": True,
+            "column_config": column_config,
+        }
+        if height is not None:
+            dataframe_kwargs["height"] = height
+        st.dataframe(display, **dataframe_kwargs)
 
     def _preview_columns(frame: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
         selected = [column for column in columns if column in frame.columns]
