@@ -210,7 +210,7 @@ if data_source_mode == "urls":
 
     url_text = st.text_area(
         t("product_page_urls", language),
-        height=180,
+        height=150,
         placeholder=(
             "https://supplier.example.com/product/wireless-backup-camera\n"
             "https://brand.example.com/products/4g-solar-camera"
@@ -237,9 +237,9 @@ if data_source_mode == "urls":
     connector_result = st.session_state.get("product_page_connector_result")
     if connector_result is None:
         st.info(
-            "Paste URLs and select “Fetch product pages” to start collection."
+            "Paste public supplier or brand product URLs above, then select “Fetch product pages”."
             if language == "en"
-            else "粘贴 URL 后点击“抓取产品页面”开始采集。"
+            else "在上方粘贴公开供应商或品牌产品页面 URL，然后点击“抓取产品页面”。"
         )
         st.stop()
 
@@ -286,188 +286,74 @@ if data_source_mode == "urls":
     logs_frame = connector_result.fetch_logs_frame
     issues_frame = connector_result.issues_frame
 
-    st.subheader(t("connector_results", language))
-    metric_1, metric_2, metric_3, metric_4 = st.columns(4)
-    metric_1.metric(t("products", language), f"{len(products_frame):,}")
-    metric_2.metric(
-        t("successful_fetches", language),
-        f"{int(logs_frame['success'].sum()) if not logs_frame.empty else 0:,}",
-    )
-    metric_3.metric(t("raw_specs", language), f"{len(specs_frame):,}")
-    metric_4.metric(t("issues", language), f"{len(issues_frame):,}")
+    def _ui_label(en: str, zh: str) -> str:
+        return zh if language == "zh-CN" else en
 
-    score_1, score_2, score_3, score_4 = st.columns(4)
+    def _display_frame(
+        frame: pd.DataFrame,
+        *,
+        percent_fields: list[str] | None = None,
+        height: int | None = None,
+    ) -> None:
+        percent_fields = percent_fields or []
+        display = _localized_frame(frame, language)
+        column_config = {}
+        for field in percent_fields:
+            localized = column_label(field, language)
+            if localized in display.columns:
+                column_config[localized] = st.column_config.NumberColumn(
+                    localized,
+                    format="percent",
+                )
+        dataframe_kwargs = {
+            "use_container_width": True,
+            "hide_index": True,
+            "column_config": column_config,
+        }
+        if height is not None:
+            dataframe_kwargs["height"] = height
+        st.dataframe(display, **dataframe_kwargs)
+
+    def _preview_columns(frame: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
+        selected = [column for column in columns if column in frame.columns]
+        return frame[selected].copy() if selected else frame.copy()
+
+    st.subheader(t("connector_results", language))
+
+    # Decision-first KPI section. This replaces the previous long, tab-heavy
+    # interface with a compact dashboard that emphasizes what users should do next.
     avg_readiness = 0 if product_readiness.empty else product_readiness["readiness_score"].mean()
     review_candidates = 0 if product_pool.empty else int((product_pool["priority"] == "P1").sum())
     supplier_count = len(supplier_comparison)
     follow_up_questions = 0 if supplier_follow_up.empty else len(supplier_follow_up)
-    score_1.metric(
-        "Average readiness" if language == "en" else "平均就绪度",
-        f"{avg_readiness:.1f}",
-    )
-    score_2.metric(
-        "Review candidates" if language == "en" else "评审候选",
-        f"{review_candidates:,}",
-    )
-    score_3.metric(
-        "Suppliers" if language == "en" else "供应商",
-        f"{supplier_count:,}",
-    )
-    score_4.metric(
-        "Follow-up questions" if language == "en" else "追问问题",
-        f"{follow_up_questions:,}",
-    )
 
-    (
-        tab_products,
-        tab_specs,
-        tab_normalized,
-        tab_matrix,
-        tab_coverage,
-        tab_gaps,
-        tab_requirement,
-        tab_follow_up,
-        tab_decision,
-        tab_readiness,
-        tab_supplier_comparison,
-        tab_product_pool,
-        tab_logs,
-        tab_issues,
-    ) = st.tabs(
-        [
-            t("products", language),
-            t("raw_specifications", language),
-            t("normalized_specifications", language),
-            t("specification_matrix", language),
-            t("coverage_summary", language),
-            t("gap_analysis", language),
-            t("requirement_draft", language),
-            t("supplier_follow_up", language),
-            t("decision_summary", language),
-            t("product_readiness_summary", language),
-            t("supplier_comparison", language),
-            t("product_pool_summary", language),
-            t("fetch_logs", language),
-            t("issues", language),
-        ]
+    kpi_1, kpi_2, kpi_3, kpi_4 = st.columns(4)
+    kpi_1.metric(_ui_label("Avg. readiness", "平均就绪度"), f"{avg_readiness:.1f}")
+    kpi_2.metric(_ui_label("Review candidates", "评审候选"), f"{review_candidates:,}")
+    kpi_3.metric(_ui_label("Suppliers", "供应商"), f"{supplier_count:,}")
+    kpi_4.metric(_ui_label("Follow-up questions", "追问问题"), f"{follow_up_questions:,}")
+
+    health_1, health_2, health_3, health_4 = st.columns(4)
+    health_1.metric(t("products", language), f"{len(products_frame):,}")
+    health_2.metric(
+        t("successful_fetches", language),
+        f"{int(logs_frame['success'].sum()) if not logs_frame.empty else 0:,}",
     )
-    with tab_products:
-        st.dataframe(_localized_frame(products_frame, language), use_container_width=True, hide_index=True)
-    with tab_specs:
-        st.dataframe(_localized_frame(specs_frame, language), use_container_width=True, hide_index=True)
-    with tab_normalized:
-        st.dataframe(_localized_frame(normalized_frame, language), use_container_width=True, hide_index=True)
-    with tab_matrix:
-        st.dataframe(_localized_frame(matrix_frame, language), use_container_width=True, hide_index=True)
-    with tab_coverage:
-        coverage_display = _localized_frame(coverage_frame, language)
-        st.dataframe(
-            coverage_display,
-            use_container_width=True,
-            hide_index=True,
-            column_config={
-                column_label("coverage_rate", language): st.column_config.NumberColumn(
-                    column_label("coverage_rate", language),
-                    format="percent",
-                ),
-            },
+    health_3.metric(t("raw_specs", language), f"{len(specs_frame):,}")
+    health_4.metric(t("issues", language), f"{len(issues_frame):,}")
+
+    if products_frame.empty:
+        st.error(
+            "No product records were produced. Check whether the URLs are public HTML product pages."
+            if language == "en"
+            else "未生成产品记录。请检查 URL 是否为公开 HTML 产品页面。"
         )
-    with tab_gaps:
-        gaps_display = _localized_frame(gaps_frame, language)
-        st.dataframe(
-            gaps_display,
-            use_container_width=True,
-            hide_index=True,
-            column_config={
-                column_label("completion_rate", language): st.column_config.NumberColumn(
-                    column_label("completion_rate", language),
-                    format="percent",
-                ),
-            },
+    elif specs_frame.empty:
+        st.warning(
+            "The page was fetched, but no technical specification table was detected. Use supplier or brand product detail pages with visible specification tables for better results."
+            if language == "en"
+            else "页面已抓取，但未识别到技术规格表。建议使用包含明确规格表的供应商或品牌产品详情页。"
         )
-    with tab_requirement:
-        st.dataframe(
-            _localized_frame(requirement_frame, language),
-            use_container_width=True,
-            hide_index=True,
-        )
-    with tab_follow_up:
-        st.dataframe(
-            _localized_frame(supplier_follow_up, language),
-            use_container_width=True,
-            hide_index=True,
-        )
-    with tab_decision:
-        decision_display = _localized_frame(decision_summary, language)
-        st.dataframe(
-            decision_display,
-            use_container_width=True,
-            hide_index=True,
-            column_config={
-                column_label("completion_rate", language): st.column_config.NumberColumn(
-                    column_label("completion_rate", language),
-                    format="percent",
-                ),
-            },
-        )
-    with tab_readiness:
-        readiness_display = _localized_frame(product_readiness, language)
-        st.dataframe(
-            readiness_display,
-            use_container_width=True,
-            hide_index=True,
-            column_config={
-                column_label("completion_rate", language): st.column_config.NumberColumn(
-                    column_label("completion_rate", language),
-                    format="percent",
-                ),
-                column_label("metadata_completeness", language): st.column_config.NumberColumn(
-                    column_label("metadata_completeness", language),
-                    format="percent",
-                ),
-            },
-        )
-    with tab_supplier_comparison:
-        supplier_display = _localized_frame(supplier_comparison, language)
-        st.dataframe(
-            supplier_display,
-            use_container_width=True,
-            hide_index=True,
-            column_config={
-                column_label("average_completion_rate", language): st.column_config.NumberColumn(
-                    column_label("average_completion_rate", language),
-                    format="percent",
-                ),
-            },
-        )
-    with tab_product_pool:
-        product_pool_display = _localized_frame(product_pool, language)
-        st.dataframe(
-            product_pool_display,
-            use_container_width=True,
-            hide_index=True,
-            column_config={
-                column_label("completion_rate", language): st.column_config.NumberColumn(
-                    column_label("completion_rate", language),
-                    format="percent",
-                ),
-                column_label("metadata_completeness", language): st.column_config.NumberColumn(
-                    column_label("metadata_completeness", language),
-                    format="percent",
-                ),
-            },
-        )
-    with tab_logs:
-        st.dataframe(_localized_frame(logs_frame, language), use_container_width=True, hide_index=True)
-    with tab_issues:
-        if issues_frame.empty:
-            st.success(
-                "No connector issues were recorded."
-                if language == "en"
-                else "未记录连接器问题。"
-            )
-        else:
-            st.dataframe(_localized_frame(issues_frame, language), use_container_width=True, hide_index=True)
 
     st.download_button(
         t("download_product_page_workbook", language),
@@ -482,6 +368,164 @@ if data_source_mode == "urls":
             "spreadsheetml.sheet"
         ),
     )
+
+    (
+        tab_overview,
+        tab_decision,
+        tab_specs,
+        tab_requirements,
+        tab_diagnostics,
+    ) = st.tabs(
+        [
+            _ui_label("Overview", "总览"),
+            _ui_label("Decision Board", "决策看板"),
+            _ui_label("Specifications", "规格分析"),
+            _ui_label("Requirements", "需求与追问"),
+            _ui_label("Diagnostics", "诊断数据"),
+        ]
+    )
+
+    with tab_overview:
+        st.markdown(
+            "#### " + _ui_label("Recommended working view", "推荐工作视图")
+        )
+        st.caption(
+            _ui_label(
+                "Start with Product Pool and Supplier Comparison. Use Diagnostics only when you need raw evidence or troubleshooting.",
+                "优先查看产品池和供应商对比。只有需要原始证据或排查问题时，再进入诊断数据。",
+            )
+        )
+
+        left, right = st.columns([1.4, 1])
+        with left:
+            st.markdown("##### " + _ui_label("Top product candidates", "优先产品候选"))
+            product_preview = _preview_columns(
+                product_pool,
+                [
+                    "priority",
+                    "title",
+                    "brand",
+                    "model",
+                    "readiness_score",
+                    "product_pool_status",
+                    "risk_level",
+                    "follow_up_question_count",
+                    "source_url",
+                ],
+            )
+            _display_frame(product_preview, height=320)
+        with right:
+            st.markdown("##### " + _ui_label("Supplier snapshot", "供应商概览"))
+            supplier_preview = _preview_columns(
+                supplier_comparison,
+                [
+                    "supplier_name",
+                    "product_count",
+                    "average_readiness_score",
+                    "overall_status",
+                    "total_follow_up_questions",
+                ],
+            )
+            _display_frame(supplier_preview, height=320)
+
+    with tab_decision:
+        decision_view_options = {
+            _ui_label("Product Pool", "产品池"): "pool",
+            _ui_label("Readiness Score", "就绪度评分"): "readiness",
+            _ui_label("Supplier Comparison", "供应商对比"): "suppliers",
+            _ui_label("Decision Summary", "决策摘要"): "decision",
+        }
+        selected_decision_view = st.selectbox(
+            _ui_label("Decision view", "决策视图"),
+            list(decision_view_options.keys()),
+        )
+        decision_view = decision_view_options[selected_decision_view]
+
+        if decision_view == "pool":
+            _display_frame(
+                product_pool,
+                percent_fields=["completion_rate", "metadata_completeness"],
+            )
+        elif decision_view == "readiness":
+            _display_frame(
+                product_readiness,
+                percent_fields=["completion_rate", "metadata_completeness"],
+            )
+        elif decision_view == "suppliers":
+            _display_frame(
+                supplier_comparison,
+                percent_fields=["average_completion_rate"],
+            )
+        else:
+            _display_frame(decision_summary, percent_fields=["completion_rate"])
+
+    with tab_specs:
+        spec_view_options = {
+            t("specification_matrix", language): "matrix",
+            t("coverage_summary", language): "coverage",
+            t("gap_analysis", language): "gaps",
+            t("normalized_specifications", language): "normalized",
+        }
+        selected_spec_view = st.selectbox(
+            _ui_label("Specification view", "规格视图"),
+            list(spec_view_options.keys()),
+        )
+        spec_view = spec_view_options[selected_spec_view]
+
+        if spec_view == "matrix":
+            _display_frame(matrix_frame)
+        elif spec_view == "coverage":
+            _display_frame(coverage_frame, percent_fields=["coverage_rate"])
+        elif spec_view == "gaps":
+            _display_frame(gaps_frame, percent_fields=["completion_rate"])
+        else:
+            _display_frame(normalized_frame)
+
+    with tab_requirements:
+        requirement_view_options = {
+            t("requirement_draft", language): "draft",
+            t("supplier_follow_up", language): "follow_up",
+        }
+        selected_requirement_view = st.selectbox(
+            _ui_label("Requirement view", "需求视图"),
+            list(requirement_view_options.keys()),
+        )
+        requirement_view = requirement_view_options[selected_requirement_view]
+
+        if requirement_view == "draft":
+            _display_frame(requirement_frame)
+        else:
+            _display_frame(supplier_follow_up)
+
+    with tab_diagnostics:
+        diagnostics_view_options = {
+            t("products", language): "products",
+            t("raw_specifications", language): "raw_specs",
+            t("fetch_logs", language): "logs",
+            t("issues", language): "issues",
+        }
+        selected_diagnostics_view = st.selectbox(
+            _ui_label("Diagnostics view", "诊断视图"),
+            list(diagnostics_view_options.keys()),
+        )
+        diagnostics_view = diagnostics_view_options[selected_diagnostics_view]
+
+        if diagnostics_view == "products":
+            _display_frame(products_frame)
+        elif diagnostics_view == "raw_specs":
+            _display_frame(specs_frame)
+        elif diagnostics_view == "logs":
+            _display_frame(logs_frame)
+        else:
+            if issues_frame.empty:
+                st.success(
+                    "No connector issues were recorded."
+                    if language == "en"
+                    else "未记录连接器问题。"
+                )
+            else:
+                _display_frame(issues_frame)
+
     st.stop()
 
 
